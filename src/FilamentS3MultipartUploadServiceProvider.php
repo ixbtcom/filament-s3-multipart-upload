@@ -7,6 +7,7 @@ namespace CloudMazing\FilamentS3MultipartUpload;
 use Aws\S3\S3Client;
 use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\MultipartUploadCompletionController;
 use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\MultipartUploadController;
+use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\S3MultipartController;
 use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\TemporarySignedUrlController;
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Js;
@@ -41,21 +42,29 @@ class FilamentS3MultipartUploadServiceProvider extends PackageServiceProvider
             ->when(MultipartUploadController::class)
             ->needs(S3Client::class)
             ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
+                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
             });
+
+        $this->app
+            ->when(S3MultipartController::class)
+            ->needs(S3Client::class)
+            ->give(function ($app) {
+                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
+            });
+
 
         $this->app
             ->when(TemporarySignedUrlController::class)
             ->needs(S3Client::class)
             ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
+                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
             });
 
         $this->app
             ->when(MultipartUploadCompletionController::class)
             ->needs(S3Client::class)
             ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
+                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
             });
     }
 }

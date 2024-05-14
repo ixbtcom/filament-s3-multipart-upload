@@ -29,6 +29,7 @@ export default function uppy({state, maxFiles, maxSize, directory, companionUrl,
 
             this.uppy = new Uppy({
                 id: 'uppy',
+                autoProceed: true,
                 debug: true,
                 restrictions: {
                     maxNumberOfFiles: maxFiles,

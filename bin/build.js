@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as esbuild from 'esbuild'
 
 const isDev = process.argv.includes('--dev')

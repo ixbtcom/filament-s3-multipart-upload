@@ -19,6 +19,8 @@ class FileUpload extends Field
 
     protected string $directory = '';
 
+    protected string $disk = 's3';
+
     protected Closure|bool $invisible = false;
 
     public function invisible(Closure|bool $invisible = true): self
@@ -45,12 +47,14 @@ class FileUpload extends Field
         return $this->directory;
     }
 
+
     public function hasAwsConfigured(): bool
     {
-        return config('filesystems.disks.s3.bucket')
-            && config('filesystems.disks.s3.key')
-            && config('filesystems.disks.s3.region')
-            && config('filesystems.disks.s3.secret');
+
+        return config("filesystems.disks.$this->disk.bucket")
+            && config("filesystems.disks.$this->disk.key")
+            && config("filesystems.disks.$this->disk.region")
+            && config("filesystems.disks.$this->disk.secret");
     }
 
     public function companionUrl(): string
