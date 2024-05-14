@@ -6,6 +6,7 @@ namespace CloudMazing\FilamentS3MultipartUpload\Http\Controllers;
 
 use Aws\S3\S3Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class MultipartUploadController
 {
@@ -23,7 +24,7 @@ class MultipartUploadController
     {
         $response = $this->s3->createMultipartUpload([
             'Bucket' => config('filesystems.disks.s3.bucket'),
-            'Key' => $request->input('filename'),
+            'Key' => Str::replaceStart('/','', $request->input('filename')),
             'ContentType' => $request->input('metadata.type'),
             'ContentDisposition' => 'inline',
         ]);
