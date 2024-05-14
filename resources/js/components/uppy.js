@@ -1,10 +1,10 @@
 import { Uppy } from "@uppy/core"
 import DragDrop from "@uppy/drag-drop"
 import StatusBar from "@uppy/status-bar"
-import AwsS3Multipart from "@uppy/aws-s3-multipart"
+import AwsS3 from "@uppy/aws-s3"
 
 window.Uppy = Uppy
-window.AwsS3Multipart = AwsS3Multipart
+window.AwsS3= AwsS3
 window.DragDrop = DragDrop
 window.StatusBar = StatusBar
 
@@ -57,11 +57,12 @@ export default function uppy({state, maxFiles, maxSize, directory, companionUrl,
                 .use(StatusBar, {
                     target: '.uppy__progress-bar',
                 })
-                .use(AwsS3Multipart, {
+                .use(AwsS3, {
                     limit: 6,
                     companionUrl,
                     companionHeaders: {
                         'X-CSRF-TOKEN': csrfToken,
+                        shouldUseMultipart: (file) => file.size > 100 * 2 ** 20,
                     },
                 })
 
