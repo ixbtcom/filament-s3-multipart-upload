@@ -42,14 +42,7 @@ class FilamentS3MultipartUploadServiceProvider extends PackageServiceProvider
             ->when(MultipartUploadController::class)
             ->needs(S3Client::class)
             ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
-            });
-
-        $this->app
-            ->when(S3MultipartController::class)
-            ->needs(S3Client::class)
-            ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
+                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
             });
 
 
@@ -57,14 +50,14 @@ class FilamentS3MultipartUploadServiceProvider extends PackageServiceProvider
             ->when(TemporarySignedUrlController::class)
             ->needs(S3Client::class)
             ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
+                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
             });
 
         $this->app
             ->when(MultipartUploadCompletionController::class)
             ->needs(S3Client::class)
             ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk(config('filament-s3-multipart-upload.disk'))->getClient();
+                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
             });
     }
 }

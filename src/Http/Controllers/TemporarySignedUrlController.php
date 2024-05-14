@@ -15,9 +15,9 @@ class TemporarySignedUrlController
 
     public function show(Request $request, string $uploadId, int $index)
     {
-        $disk = config('filament.uploads.disk');
+
         $command = $this->s3->getCommand('uploadPart', [
-            'Bucket' => config("filesystems.disks.$disk.bucket"),
+            'Bucket' => config("filesystems.disks.s3.bucket"),
             'Key' => $request->query('key'),
             'UploadId' => $uploadId,
             'PartNumber' => $index,

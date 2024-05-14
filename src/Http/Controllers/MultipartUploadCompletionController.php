@@ -15,9 +15,9 @@ class MultipartUploadCompletionController
 
     public function store(Request $request, string $uploadId)
     {
-        $disk = config('filament.uploads.disk');
+
         $result = $this->s3->completeMultipartUpload([
-            'Bucket' => config("filesystems.disks.$disk.bucket"),
+            'Bucket' => config("filesystems.disks.s3.bucket"),
             'Key' => $request->query('key'),
             'UploadId' => $uploadId,
             'MultipartUpload' => ['Parts' => $request->input('parts')],

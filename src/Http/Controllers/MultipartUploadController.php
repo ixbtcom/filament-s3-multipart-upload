@@ -22,9 +22,9 @@ class MultipartUploadController
      */
     public function store(Request $request)
     {
-        $disk = config('filament.uploads.disk');
+
         $response = $this->s3->createMultipartUpload([
-            'Bucket' => config("filesystems.disks.$disk.bucket"),
+            'Bucket' => config("filesystems.disks.s3.bucket"),
             'Key' => Str::replaceStart('/','', $request->input('filename')),
             'ContentType' => $request->input('metadata.type'),
             'ContentDisposition' => 'inline',
