@@ -1,83 +1,180 @@
-import { Uppy } from "@uppy/core"
-import DragDrop from "@uppy/drag-drop"
-import StatusBar from "@uppy/status-bar"
-import AwsS3Multipart from "@uppy/aws-s3-multipart"
+import Uppy from '@uppy/core'
+import AwsS3Multipart from '@uppy/aws-s3-multipart'
 
-window.Uppy = Uppy
-window.AwsS3Multipart = AwsS3Multipart
-window.DragDrop = DragDrop
-window.StatusBar = StatusBar
-
-export default function uppy({state, maxFiles, maxSize, directory, companionUrl, csrfToken}) {
+export default function uppy({
+    state,
+    maxFiles,
+    maxSize,
+    directory,
+    companionUrl,
+    csrfToken,
+    acceptedTypes,
+}) {
     return {
-        uppy: null,
         state,
-        uploadedFiles: [],
+        uppy: null,
 
-        bytesToSize (bytes) {
-            const sizes = ["Bytes", "KB", "MB", "GB", "TB"]
-            if (bytes === 0) return "n/a"
-            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10)
-            if (i === 0) return `${bytes} ${sizes[i]}`
-            return `${(bytes / 1024 ** i).toFixed(1)} ${sizes[i]}`
-        },
+        // UI state
+        fileName: null,
+        fileSize: null,
+        isDragging: false,
+        isUploading: false,
+        progress: 0,
+        errorMessage: null,
+        uploadComplete: false,
 
-        init: function () {
+        init() {
+            // If state already has a value, show it as uploaded
             if (this.state) {
-                this.uploadedFiles = [{ name: this.state, type: null, size: null }]
+                this.fileName = String(this.state).split('/').pop()
+                this.uploadComplete = true
             }
 
             this.uppy = new Uppy({
-                id: 'uppy',
+                id: this.$el.id || 'uppy-' + Math.random().toString(36).substring(2, 11),
                 autoProceed: true,
-                debug: true,
                 restrictions: {
-                    maxNumberOfFiles: maxFiles,
-                    maxFileSize: maxSize,
-                    minNumberOfFiles: 1
+                    maxNumberOfFiles: maxFiles || 1,
+                    maxFileSize: maxSize || null,
+                    allowedFileTypes: acceptedTypes && acceptedTypes.length ? acceptedTypes : null,
                 },
                 onBeforeUpload: (files) => {
-                    const updatedFiles = {}
+                    if (!directory) return files
 
-                    Object.keys(files).forEach(fileID => {
-                        updatedFiles[fileID] = {
-                            ...files[fileID],
-                            name: `${directory}/${files[fileID].name}`,
+                    const updated = {}
+                    Object.keys(files).forEach((id) => {
+                        updated[id] = {
+                            ...files[id],
+                            name: `${directory}/${files[id].name}`,
                         }
                     })
-
-                    return updatedFiles
+                    return updated
                 },
-            });
+            })
 
-            this.uppy
-                .use(DragDrop, {
-                    target: '.uppy__input',
-                })
-                .use(StatusBar, {
-                    target: '.uppy__progress-bar',
-                })
-                .use(AwsS3Multipart, {
-                    limit: 6,
-                    companionUrl,
-                    companionHeaders: {
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                })
+            this.uppy.use(AwsS3Multipart, {
+                companionUrl: companionUrl,
+                companionHeaders: {
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                limit: 6,
+                retryDelays: [0, 1000, 3000, 5000],
+            })
 
-            this.uppy.on("file-added", file => {
-                uppy.upload && uppy.upload()
-            });
+            this.uppy.on('file-added', (file) => {
+                this.fileName = file.name.split('/').pop()
+                this.fileSize = file.size
+                this.errorMessage = null
+                this.uploadComplete = false
+            })
 
-            this.uppy.on("upload-success", (file, response) => {
-                this.state = response.body.path
+            this.uppy.on('upload', () => {
+                this.isUploading = true
+                this.progress = 0
+                this.errorMessage = null
+            })
 
-                if (maxFiles === 1) {
-                    this.uploadedFiles = [file]
-                } else {
-                    this.uploadedFiles = [...this.uploadedFiles, file]
+            this.uppy.on('progress', (percent) => {
+                this.progress = percent
+            })
+
+            this.uppy.on('upload-success', (file, response) => {
+                const key = file.meta?.key || response?.body?.path || null
+                this.state = key
+                this.uploadComplete = true
+                this.isUploading = false
+            })
+
+            this.uppy.on('upload-error', (file, error) => {
+                this.errorMessage = error?.message || 'Ошибка загрузки'
+                this.isUploading = false
+            })
+
+            this.uppy.on('complete', (result) => {
+                this.isUploading = false
+                if (result.failed?.length > 0) {
+                    this.errorMessage = 'Загрузка не удалась'
                 }
-            });
+            })
+
+            this.uppy.on('restriction-failed', (file, error) => {
+                this.errorMessage = error?.message || 'Файл не соответствует ограничениям'
+            })
+
+            this.uppy.on('error', (error) => {
+                this.errorMessage = error?.message || 'Критическая ошибка'
+                this.isUploading = false
+            })
+        },
+
+        openFilePicker() {
+            if (this.isUploading) return
+            this.$refs.fileInput?.click()
+        },
+
+        handleFileSelect(event) {
+            const file = event.target.files?.[0]
+            if (!file) return
+
+            this.addFile(file)
+            event.target.value = ''
+        },
+
+        handleDrop(event) {
+            this.isDragging = false
+            const file = event.dataTransfer?.files?.[0]
+            if (!file) return
+
+            this.addFile(file)
+        },
+
+        addFile(file) {
+            // Remove existing files (single file mode)
+            this.uppy.getFiles().forEach((f) => this.uppy.removeFile(f.id))
+
+            try {
+                this.uppy.addFile({
+                    name: file.name,
+                    type: file.type,
+                    data: file,
+                    source: 'Local',
+                })
+            } catch (err) {
+                this.errorMessage = err.message
+            }
+        },
+
+        removeFile() {
+            if (this.uppy) {
+                this.uppy.cancelAll()
+            }
+            this.state = null
+            this.fileName = null
+            this.fileSize = null
+            this.progress = 0
+            this.isUploading = false
+            this.uploadComplete = false
+            this.errorMessage = null
+        },
+
+        formatSize(bytes) {
+            if (!bytes) return ''
+            const units = ['B', 'KB', 'MB', 'GB', 'TB']
+            let i = 0
+            let size = bytes
+            while (size >= 1024 && i < units.length - 1) {
+                size /= 1024
+                i++
+            }
+            return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i]
+        },
+
+        destroy() {
+            if (this.uppy) {
+                this.uppy.cancelAll()
+                this.uppy.destroy()
+                this.uppy = null
+            }
         },
     }
 }

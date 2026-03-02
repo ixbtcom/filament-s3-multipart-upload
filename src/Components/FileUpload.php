@@ -19,8 +19,24 @@ class FileUpload extends Field
 
     protected string $directory = '';
 
-
     protected Closure|bool $invisible = false;
+
+    protected array $acceptedFileTypes = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->default(null);
+
+        $this->dehydrateStateUsing(fn ($state) => $state ?: null);
+
+        $this->afterStateHydrated(function (FileUpload $component, $state): void {
+            if ($state === '' || $state === false) {
+                $component->state(null);
+            }
+        });
+    }
 
     public function invisible(Closure|bool $invisible = true): self
     {
@@ -46,6 +62,21 @@ class FileUpload extends Field
         return $this->directory;
     }
 
+    public function acceptedFileTypes(array $types): self
+    {
+        $this->acceptedFileTypes = $types;
+
+        return $this;
+    }
+
+    public function getAcceptedFileTypes(): array
+    {
+        if (! empty($this->acceptedFileTypes)) {
+            return $this->acceptedFileTypes;
+        }
+
+        return config('filament-s3-multipart-upload.accepted_mime_types', []);
+    }
 
     public function hasAwsConfigured(): bool
     {
@@ -59,7 +90,7 @@ class FileUpload extends Field
 
     public function companionUrl(): string
     {
-        return '/'.config('filament-s3-multipart-upload.prefix');
+        return '/'.config('filament-s3-multipart-upload.prefix', '_multipart-upload');
     }
 
     public function getMaxFileSize(): int
@@ -100,5 +131,19 @@ class FileUpload extends Field
         }
 
         return $this->maxNumberOfFiles;
+    }
+
+    public function formatFileSize(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i = 0;
+        $size = (float) $bytes;
+
+        while ($size >= 1024 && $i < count($units) - 1) {
+            $size /= 1024;
+            $i++;
+        }
+
+        return ($i === 0 ? (int) $size : number_format($size, 1)).' '.$units[$i];
     }
 }
