@@ -9,15 +9,17 @@ use Illuminate\Http\Request;
 
 class MultipartUploadCompletionController
 {
-    public function __construct(private S3client $s3)
+    public function __construct(private S3Client $s3)
     {
     }
 
     public function store(Request $request, string $uploadId)
     {
+        $disk = config('filament-s3-multipart-upload.disk', 's3');
+        $bucket = config("filesystems.disks.{$disk}.bucket");
 
         $result = $this->s3->completeMultipartUpload([
-            'Bucket' => config("filesystems.disks.s3.bucket"),
+            'Bucket' => $bucket,
             'Key' => $request->query('key'),
             'UploadId' => $uploadId,
             'MultipartUpload' => ['Parts' => $request->input('parts')],

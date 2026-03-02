@@ -49,11 +49,12 @@ class FileUpload extends Field
 
     public function hasAwsConfigured(): bool
     {
+        $disk = config('filament-s3-multipart-upload.disk', 's3');
 
-        return config("filesystems.disks.s3.bucket")
-            && config("filesystems.disks.s3.key")
-            && config("filesystems.disks.s3.region")
-            && config("filesystems.disks.s3.secret");
+        return config("filesystems.disks.{$disk}.bucket")
+            && config("filesystems.disks.{$disk}.key")
+            && config("filesystems.disks.{$disk}.region")
+            && config("filesystems.disks.{$disk}.secret");
     }
 
     public function companionUrl(): string

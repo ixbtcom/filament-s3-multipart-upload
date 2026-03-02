@@ -38,26 +38,25 @@ class FilamentS3MultipartUploadServiceProvider extends PackageServiceProvider
             AlpineComponent::make('uppy', __DIR__ . '/../resources/js/dist/components/uppy.js'),
         ], 'cloudmazing/filament-s3-multipart-upload');
 
+        $getDisk = function ($app) {
+            $diskName = config('filament-s3-multipart-upload.disk', 's3');
+
+            return $app->make(FilesystemManager::class)->disk($diskName)->getClient();
+        };
+
         $this->app
             ->when(MultipartUploadController::class)
             ->needs(S3Client::class)
-            ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
-            });
-
+            ->give($getDisk);
 
         $this->app
             ->when(TemporarySignedUrlController::class)
             ->needs(S3Client::class)
-            ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
-            });
+            ->give($getDisk);
 
         $this->app
             ->when(MultipartUploadCompletionController::class)
             ->needs(S3Client::class)
-            ->give(function ($app) {
-                return $app->make(FilesystemManager::class)->disk('s3')->getClient();
-            });
+            ->give($getDisk);
     }
 }

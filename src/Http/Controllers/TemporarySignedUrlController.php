@@ -15,9 +15,12 @@ class TemporarySignedUrlController
 
     public function show(Request $request, string $uploadId, int $index)
     {
+        $disk = config('filament-s3-multipart-upload.disk', 's3');
+        $bucket = config("filesystems.disks.{$disk}.bucket");
+        $expiry = config('filament-s3-multipart-upload.expiry', '+1 hour');
 
         $command = $this->s3->getCommand('uploadPart', [
-            'Bucket' => config("filesystems.disks.s3.bucket"),
+            'Bucket' => $bucket,
             'Key' => $request->query('key'),
             'UploadId' => $uploadId,
             'PartNumber' => $index,
@@ -25,7 +28,7 @@ class TemporarySignedUrlController
         ]);
 
         $url = (string) $this->s3
-            ->createPresignedRequest($command, '+1 hour')
+            ->createPresignedRequest($command, $expiry)
             ->getUri();
 
         return [
