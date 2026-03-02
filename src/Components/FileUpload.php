@@ -93,6 +93,11 @@ class FileUpload extends Field
         return '/'.config('filament-s3-multipart-upload.prefix', '_multipart-upload');
     }
 
+    public function getPartSize(): int
+    {
+        return config('filament-s3-multipart-upload.part_size', 50 * 1024 * 1024);
+    }
+
     public function getMaxFileSize(): int
     {
         return $this->maxFileSize;

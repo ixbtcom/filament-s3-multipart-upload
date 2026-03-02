@@ -18,6 +18,7 @@
             companionUrl: @js($companionUrl()),
             csrfToken: @js(csrf_token()),
             acceptedTypes: @js($getAcceptedFileTypes()),
+            partSize: @js($getPartSize()),
         })"
         wire:ignore
     >

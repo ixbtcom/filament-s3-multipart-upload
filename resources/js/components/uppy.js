@@ -9,6 +9,7 @@ export default function uppy({
     companionUrl,
     csrfToken,
     acceptedTypes,
+    partSize,
 }) {
     return {
         state,
@@ -52,12 +53,15 @@ export default function uppy({
                 },
             })
 
+            const chunkSize = partSize || 50 * 1024 * 1024 // default 50MB
+
             this.uppy.use(AwsS3Multipart, {
                 companionUrl: companionUrl,
                 companionHeaders: {
                     'X-CSRF-TOKEN': csrfToken,
                 },
-                limit: 6,
+                getChunkSize: () => chunkSize,
+                limit: 5,
                 retryDelays: [0, 1000, 3000, 5000],
             })
 
