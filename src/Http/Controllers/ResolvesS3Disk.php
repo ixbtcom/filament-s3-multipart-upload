@@ -12,6 +12,9 @@ trait ResolvesS3Disk
 {
     protected function resolveClientAndBucket(Request $request): array
     {
+        // S3 providers can be slow — extend timeout for multipart operations
+        set_time_limit(120);
+
         $diskName = $request->header('X-S3-Disk')
             ?: config('filament-s3-multipart-upload.disk', 's3');
 
