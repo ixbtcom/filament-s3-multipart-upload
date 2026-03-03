@@ -10,6 +10,7 @@ export default function uppy({
     csrfToken,
     acceptedTypes,
     partSize,
+    disk,
 }) {
     return {
         state,
@@ -59,6 +60,7 @@ export default function uppy({
                 companionUrl: companionUrl,
                 companionHeaders: {
                     'X-CSRF-TOKEN': csrfToken,
+                    ...(disk ? { 'X-S3-Disk': disk } : {}),
                 },
                 getChunkSize: () => chunkSize,
                 limit: 5,

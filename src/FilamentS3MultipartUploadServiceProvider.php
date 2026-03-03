@@ -4,15 +4,8 @@ declare(strict_types=1);
 
 namespace CloudMazing\FilamentS3MultipartUpload;
 
-use Aws\S3\S3Client;
-use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\MultipartUploadCompletionController;
-use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\MultipartUploadController;
-use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\S3MultipartController;
-use CloudMazing\FilamentS3MultipartUpload\Http\Controllers\TemporarySignedUrlController;
 use Filament\Support\Assets\AlpineComponent;
-use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
-use Illuminate\Filesystem\FilesystemManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -37,26 +30,5 @@ class FilamentS3MultipartUploadServiceProvider extends PackageServiceProvider
         FilamentAsset::register([
             AlpineComponent::make('uppy', __DIR__ . '/../resources/js/dist/components/uppy.js'),
         ], 'cloudmazing/filament-s3-multipart-upload');
-
-        $getDisk = function ($app) {
-            $diskName = config('filament-s3-multipart-upload.disk', 's3');
-
-            return $app->make(FilesystemManager::class)->disk($diskName)->getClient();
-        };
-
-        $this->app
-            ->when(MultipartUploadController::class)
-            ->needs(S3Client::class)
-            ->give($getDisk);
-
-        $this->app
-            ->when(TemporarySignedUrlController::class)
-            ->needs(S3Client::class)
-            ->give($getDisk);
-
-        $this->app
-            ->when(MultipartUploadCompletionController::class)
-            ->needs(S3Client::class)
-            ->give($getDisk);
     }
 }

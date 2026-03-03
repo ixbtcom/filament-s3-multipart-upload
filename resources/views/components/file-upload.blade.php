@@ -19,6 +19,7 @@
             csrfToken: @js(csrf_token()),
             acceptedTypes: @js($getAcceptedFileTypes()),
             partSize: @js($getPartSize()),
+            disk: @js($getDisk()),
         })"
         wire:ignore
     >

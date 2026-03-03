@@ -4,22 +4,18 @@ declare(strict_types=1);
 
 namespace CloudMazing\FilamentS3MultipartUpload\Http\Controllers;
 
-use Aws\S3\S3Client;
 use Illuminate\Http\Request;
 
 class TemporarySignedUrlController
 {
-    public function __construct(private S3Client $s3)
-    {
-    }
+    use ResolvesS3Disk;
 
     public function show(Request $request, string $uploadId, int $index)
     {
-        $disk = config('filament-s3-multipart-upload.disk', 's3');
-        $bucket = config("filesystems.disks.{$disk}.bucket");
+        [$client, $bucket] = $this->resolveClientAndBucket($request);
         $expiry = config('filament-s3-multipart-upload.expiry', '+1 hour');
 
-        $command = $this->s3->getCommand('uploadPart', [
+        $command = $client->getCommand('uploadPart', [
             'Bucket' => $bucket,
             'Key' => $request->query('key'),
             'UploadId' => $uploadId,
@@ -27,7 +23,7 @@ class TemporarySignedUrlController
             'Body' => '',
         ]);
 
-        $url = (string) $this->s3
+        $url = (string) $client
             ->createPresignedRequest($command, $expiry)
             ->getUri();
 
