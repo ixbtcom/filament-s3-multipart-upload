@@ -55,13 +55,50 @@ export default function uppy({
             })
 
             const chunkSize = partSize || 50 * 1024 * 1024 // default 50MB
+            const multipartThreshold = 1024 * 1024 * 1024 // 1GB
+            const headers = {
+                'X-CSRF-TOKEN': csrfToken,
+                ...(disk ? { 'X-S3-Disk': disk } : {}),
+            }
 
             this.uppy.use(AwsS3Multipart, {
-                companionUrl: companionUrl,
-                companionHeaders: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    ...(disk ? { 'X-S3-Disk': disk } : {}),
+                // Files < 1GB: single presigned PUT (1 request to server)
+                // Files >= 1GB: multipart (N requests for presigned chunk URLs)
+                shouldUseMultipart: (file) => file.size >= multipartThreshold,
+
+                // Single upload: get one presigned PUT URL
+                async getUploadParameters(file, { signal }) {
+                    const res = await fetch(`${companionUrl}/s3/presign`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...headers,
+                        },
+                        body: JSON.stringify({
+                            filename: file.name,
+                            contentType: file.type || 'application/octet-stream',
+                        }),
+                        signal,
+                    })
+
+                    if (!res.ok) {
+                        const text = await res.text().catch(() => '')
+                        throw new Error(`Presign failed (${res.status}): ${text}`)
+                    }
+
+                    const data = await res.json()
+                    file.meta.key = data.key
+
+                    return {
+                        method: data.method,
+                        url: data.url,
+                        headers: data.headers || {},
+                    }
                 },
+
+                // Multipart options (for files >= 1GB)
+                companionUrl: companionUrl,
+                companionHeaders: headers,
                 getChunkSize: () => chunkSize,
                 limit: 5,
                 retryDelays: [0, 1000, 3000, 5000],
