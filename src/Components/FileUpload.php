@@ -23,7 +23,7 @@ class FileUpload extends Field
 
     protected array $acceptedFileTypes = [];
 
-    protected ?string $disk = null;
+    protected string|Closure|null $disk = null;
 
     protected function setUp(): void
     {
@@ -80,7 +80,7 @@ class FileUpload extends Field
         return config('filament-s3-multipart-upload.accepted_mime_types', []);
     }
 
-    public function disk(string $disk): self
+    public function disk(string|Closure $disk): self
     {
         $this->disk = $disk;
 
@@ -89,7 +89,7 @@ class FileUpload extends Field
 
     public function getDisk(): string
     {
-        return $this->disk ?? config('filament-s3-multipart-upload.disk', 's3');
+        return $this->evaluate($this->disk) ?? config('filament-s3-multipart-upload.disk', 's3');
     }
 
     public function hasAwsConfigured(): bool
